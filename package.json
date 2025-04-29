@@ -1,0 +1,43 @@
+{
+	"name": "effective-mobile-test-task-node",
+	"version": "1.0.0",
+	"description": "",
+	"main": "src/index.ts",
+	"scripts": {
+		"build": "pnpm exec tsc",
+		"dev": "pnpm nodemon",
+		"typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+		"migration:generate": "pnpm run typeorm migration:generate",
+		"migration:run": "pnpm run typeorm migration:run -d src/data-sources/psql.data-source.ts",
+		"migration:revert": "pnpm run typeorm migration:revert -d src/data-sources/psql.data-source.ts"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.10.0",
+	"devDependencies": {
+		"@eslint/js": "^9.25.1",
+		"@types/express": "^5.0.1",
+		"@types/node": "^22.15.3",
+		"dotenv": "^16.5.0",
+		"eslint-config-prettier": "^10.1.2",
+		"globals": "^16.0.0",
+		"nodemon": "^3.1.10",
+		"pino-pretty": "^13.0.0",
+		"prettier": "3.5.3",
+		"ts-node": "^10.9.2",
+		"tsconfig-paths": "^4.2.0",
+		"typescript": "^5.8.3",
+		"typescript-eslint": "^8.31.1"
+	},
+	"dependencies": {
+		"eslint": "^9.25.1",
+		"express": "^5.1.0",
+		"pg": "^8.15.6",
+		"pino": "^9.6.0",
+		"pino-http": "^10.4.0",
+		"reflect-metadata": "^0.2.2",
+		"typeorm": "^0.3.22",
+		"zod": "^3.24.3"
+	}
+}
