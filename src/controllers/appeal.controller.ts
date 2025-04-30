@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 import { ResponseDTO } from "../dtos";
 import { appealService } from "../services";
 import { FilterSchema } from "../schemas";
+import { TFilter } from "../types";
+import { IssueData, ZodError } from "zod";
 
 class AppealController {
 	private _appealService = appealService;
@@ -25,7 +27,22 @@ class AppealController {
 		res.status(200).json(new ResponseDTO(true));
 	};
 	public find = async (req: Request, res: Response) => {
-		const filter = FilterSchema.parse(req.query);
+		let filter: TFilter;
+		try {
+			filter = FilterSchema.parse(req.query);
+		} catch (e) {
+			if (e instanceof ZodError) {
+				const issues = e.issues.map((issue: IssueData) => ({
+					field: issue.path,
+					message: issue.message,
+				}));
+				res.status(400).json(new ResponseDTO(false, issues));
+				return;
+			} else {
+				throw e;
+			}
+		}
+
 		res
 			.status(200)
 			.json(new ResponseDTO(true, await this._appealService.find(filter)));
