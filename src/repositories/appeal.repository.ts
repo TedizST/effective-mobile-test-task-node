@@ -1,59 +1,55 @@
-import { Between, MoreThan, Repository } from "typeorm";
+import {
+	Between,
+	LessThanOrEqual,
+	MoreThanOrEqual,
+	UpdateResult,
+} from "typeorm";
 import { Appeal } from "../entities";
 import { TAppealID, AppealStatus, TFilter } from "../types";
+import { PSQLDataSource } from "../data-sources";
 
-export class AppealRepository extends Repository<Appeal> {
-	async changeStatus(
-		id: TAppealID,
-		status: AppealStatus,
-		result?: string
-	): Promise<void> {
-		const criteria = { id };
-		const fieldsToUpdate = {
-			status,
-			...(result && { result }),
-		};
-
-		await this.update(criteria, fieldsToUpdate);
-	}
-
-	async cancelAllApplied(): Promise<void> {
-		await this.update(
+export const appealRepository = PSQLDataSource.getRepository(Appeal).extend({
+	async cancelAllApplied(): Promise<UpdateResult> {
+		return this.update(
 			{ status: AppealStatus.Applied },
 			{ status: AppealStatus.Canceled }
 		);
-	}
+	},
 
 	async findWithFilter(filter: TFilter): Promise<Appeal[]> {
-		let where: object | undefined;
+		const { date, date_from, date_to, page, limit } = filter;
 
-		if (filter.date) {
-			where = {
-				createdAt: new Date(filter.date),
-			};
-		} else {
-			if (filter.date_from && filter.date_to) {
-				where = {
-					createdAt: Between(
-						new Date(filter.date_from),
-						new Date(filter.date_to)
-					),
-				};
-			} else if (filter.date_from) {
-				where = {
-					createdAt: MoreThan(new Date(filter.date_from)),
-				};
-			} else if (filter.date_to) {
-				where = {
-					createdAt: MoreThan(new Date(filter.date_to)),
-				};
+		let where: Record<string, any> | undefined;
+
+		const buildDateRange = () => {
+			if (date) {
+				const start = new Date(date);
+				const end = new Date(date);
+				end.setDate(end.getDate() + 1);
+				return { start, end };
 			}
+
+			const start = date_from ? new Date(date_from) : undefined;
+			const end = date_to ? new Date(date_to) : undefined;
+			if (end) end.setDate(end.getDate() + 1);
+
+			return { start, end };
+		};
+
+		const { start, end } = buildDateRange();
+
+		if (start && end) {
+			where = { createdAt: Between(start, end) };
+		} else if (start) {
+			where = { createdAt: MoreThanOrEqual(start) };
+		} else if (end) {
+			where = { createdAt: LessThanOrEqual(end) };
 		}
 
 		return this.find({
-			skip: (filter.page - 1) * filter.limit,
-			take: filter.limit,
-			...(where && { where }),
+			skip: (page - 1) * limit,
+			take: limit,
+			where,
 		});
-	}
-}
+	},
+});
