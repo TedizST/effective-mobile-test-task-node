@@ -7,19 +7,19 @@ import { ResultAppealSchema } from "../schemas";
 
 const router = express.Router();
 
-router.delete(
-	"/appeals/:id",
-	validateZod(CreateAppealSchema),
-	appealController.cancel
-);
+router.get("/appeals", appealController.find);
+router.post("/appeals", appealController.create);
+router.delete("/appeals", appealController.cancelAllApplied);
 router.put("/appeals/:id/apply", appealController.apply);
 router.put(
 	"/appeals/:id/done",
 	validateZod(ResultAppealSchema),
 	appealController.done
 );
-router.post("/appeals", appealController.create);
-router.get("/appeals", appealController.find);
-router.delete("/appeals", appealController.cancelAllApplied);
+router.put(
+	"/appeals/:id/cancel",
+	validateZod(CreateAppealSchema),
+	appealController.cancel
+);
 
 export default router;
