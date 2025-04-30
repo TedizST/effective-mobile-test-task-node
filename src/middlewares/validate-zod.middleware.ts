@@ -15,6 +15,7 @@ export const validateZod =
 					message: issue.message,
 				}));
 				res.status(400).json(new ResponseDTO(false, issues));
+				return;
 			} else {
 				next(err);
 			}
