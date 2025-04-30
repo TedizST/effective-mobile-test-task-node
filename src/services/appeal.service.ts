@@ -10,27 +10,32 @@ class AppealService {
 		AppealRepository.prototype
 	);
 
-	async create(dto: TCreateAppealDTO): Promise<AppealDTO> {
+	public async create(dto: TCreateAppealDTO): Promise<AppealDTO> {
 		const appeal = new Appeal();
 		appeal.id = randomUUID();
 		appeal.text = dto.text;
 		return AppealDTO.fromEntity(await this._repository.save(appeal));
 	}
-	async apply(id: TAppealID): Promise<void> {
-		await this._repository.changeStatus(id, AppealStatus.Applied);
+
+	public async apply(id: TAppealID): Promise<void> {
+		await this._changeStatus(id, AppealStatus.Applied, AppealStatus.New);
 	}
-	async done(id: TAppealID, result?: string): Promise<void> {
+
+	public async done(id: TAppealID, result?: string): Promise<void> {
 		await this._repository.changeStatus(id, AppealStatus.Done, result);
 	}
-	async cancel(id: TAppealID): Promise<void> {
+
+	public async cancel(id: TAppealID): Promise<void> {
 		await this._repository.changeStatus(id, AppealStatus.Canceled);
 	}
-	async find(filter: TFilter): Promise<AppealDTO[]> {
+
+	public async find(filter: TFilter): Promise<AppealDTO[]> {
 		return (await this._repository.findWithFilter(filter)).map((appeal) =>
 			AppealDTO.fromEntity(appeal)
 		);
 	}
-	async cancelAllApplied(): Promise<void> {
+
+	public async cancelAllApplied(): Promise<void> {
 		await this._repository.cancelAllApplied();
 	}
 }
