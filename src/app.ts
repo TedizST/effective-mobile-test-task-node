@@ -3,6 +3,7 @@ import { env } from "./configs";
 import { logger, syncLogger } from "./utils";
 
 import express from "express";
+import bodyParser from "body-parser";
 import http from "http";
 
 import * as middlewares from "./middlewares";
@@ -13,6 +14,7 @@ export async function bootstrap() {
 
   const app = express();
 
+	app.use(bodyParser.json());
   app.use(middlewares.contextMiddleware);
   app.use(middlewares.loggingMiddlware);
 
