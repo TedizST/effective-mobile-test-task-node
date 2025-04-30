@@ -8,61 +8,64 @@ import http from "http";
 
 import * as middlewares from "./middlewares";
 import { PSQLDataSource } from "./data-sources";
+import apiRouter from "./routes";
 
 export async function bootstrap() {
-  await PSQLDataSource.initialize();
+	await PSQLDataSource.initialize();
 
-  const app = express();
+	const app = express();
 
 	app.use(bodyParser.json());
-  app.use(middlewares.contextMiddleware);
-  app.use(middlewares.loggingMiddlware);
+	app.use(middlewares.contextMiddleware);
+	app.use(middlewares.loggingMiddlware);
 
-  app.use(middlewares.errorHandlingMiddleware);
+	app.use("/", apiRouter);
 
-  const server = http.createServer(app);
+	app.use(middlewares.errorHandlingMiddleware);
 
-  server.listen(env.PORT, () => {
-    logger.info(`server listening on port ${env.PORT} in ${env.NODE_ENV} mode`);
-  });
+	const server = http.createServer(app);
 
-  let isShutdownStarted = false;
+	server.listen(env.PORT, () => {
+		logger.info(`server listening on port ${env.PORT} in ${env.NODE_ENV} mode`);
+	});
 
-  async function shutdown() {
-    if (isShutdownStarted) return;
-    isShutdownStarted = true;
+	let isShutdownStarted = false;
 
-    syncLogger.info("graceful shutdown start");
-    const timeout = setTimeout(() => {
-      syncLogger.warn("force shutdown");
-      process.exit(1);
-    }, 15000);
+	async function shutdown() {
+		if (isShutdownStarted) return;
+		isShutdownStarted = true;
 
-    try {
-      await new Promise<void>((resolve, reject) => {
-        server.close((err) => (err ? reject(err) : resolve()));
-      });
-      syncLogger.info("server closed");
-      await PSQLDataSource.destroy();
-      syncLogger.info("db connection destroyed");
+		syncLogger.info("graceful shutdown start");
+		const timeout = setTimeout(() => {
+			syncLogger.warn("force shutdown");
+			process.exit(1);
+		}, 15000);
 
-      clearTimeout(timeout);
-      process.exit(0);
-    } catch (e) {
-      syncLogger.error(e, "error during server shutdown");
-      process.exit(1);
-    }
-  }
+		try {
+			await new Promise<void>((resolve, reject) => {
+				server.close((err) => (err ? reject(err) : resolve()));
+			});
+			syncLogger.info("server closed");
+			await PSQLDataSource.destroy();
+			syncLogger.info("db connection destroyed");
 
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
+			clearTimeout(timeout);
+			process.exit(0);
+		} catch (e) {
+			syncLogger.error(e, "error during server shutdown");
+			process.exit(1);
+		}
+	}
 
-  process.on("uncaughtException", (error) => {
-    syncLogger.fatal(error, "uncaught exception");
-    process.exit(1);
-  });
-  process.on("unhandledRejection", (reason) => {
-    syncLogger.fatal(reason, "unhandled rejection");
-    process.exit(1);
-  });
+	process.on("SIGINT", shutdown);
+	process.on("SIGTERM", shutdown);
+
+	process.on("uncaughtException", (error) => {
+		syncLogger.fatal(error, "uncaught exception");
+		process.exit(1);
+	});
+	process.on("unhandledRejection", (reason) => {
+		syncLogger.fatal(reason, "unhandled rejection");
+		process.exit(1);
+	});
 }
